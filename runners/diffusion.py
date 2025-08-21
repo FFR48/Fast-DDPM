@@ -138,7 +138,10 @@ class Diffusion(object):
             batch_size=config.training.batch_size,
             shuffle=True,
             num_workers=config.data.num_workers,
-            pin_memory=True)
+            pin_memory=True,
+            persistent_workers=True,
+            prefetch_factor=4,
+        )
 
         model = Model(config)
         model = model.to(self.device)
@@ -171,8 +174,8 @@ class Diffusion(object):
                 model.train()
                 step += 1
 
-                x_img = x['LD'].to(self.device)
-                x_gt = x['FD'].to(self.device)
+                x_img = x['LD'].to(self.device, non_blocking=True)
+                x_gt = x['FD'].to(self.device, non_blocking=True)
 
                 e = torch.randn_like(x_gt)
                 b = self.betas
@@ -268,7 +271,10 @@ class Diffusion(object):
             batch_size=config.training.batch_size,
             shuffle=True,
             num_workers=config.data.num_workers,
-            pin_memory=True)
+            pin_memory=True,
+            persistent_workers=True,
+            prefetch_factor=4,
+        )
 
         model = Model(config)
         model = model.to(self.device)
@@ -301,9 +307,9 @@ class Diffusion(object):
                 model.train()
                 step += 1
 
-                x_bw = x['BW'].to(self.device)
-                x_md = x['MD'].to(self.device)
-                x_fw = x['FW'].to(self.device)
+                x_bw = x['BW'].to(self.device, non_blocking=True)
+                x_md = x['MD'].to(self.device, non_blocking=True)
+                x_fw = x['FW'].to(self.device, non_blocking=True)
 
                 e = torch.randn_like(x_md)
                 b = self.betas
@@ -406,7 +412,10 @@ class Diffusion(object):
             batch_size=config.training.batch_size,
             shuffle=True,
             num_workers=config.data.num_workers,
-            pin_memory=True)
+            pin_memory=True,
+            persistent_workers=True,
+            prefetch_factor=4,
+        )
 
         model = Model(config)
         model = model.to(self.device)
@@ -439,8 +448,8 @@ class Diffusion(object):
                 model.train()
                 step += 1
 
-                x_img = x['LD'].to(self.device)
-                x_gt = x['FD'].to(self.device)
+                x_img = x['LD'].to(self.device, non_blocking=True)
+                x_gt = x['FD'].to(self.device, non_blocking=True)
 
                 e = torch.randn_like(x_gt)
                 b = self.betas
@@ -518,7 +527,10 @@ class Diffusion(object):
             batch_size=config.training.batch_size,
             shuffle=True,
             num_workers=config.data.num_workers,
-            pin_memory=True)
+            pin_memory=True,
+            persistent_workers=True,
+            prefetch_factor=4,
+        )
 
         model = Model(config)
         model = model.to(self.device)
@@ -553,9 +565,9 @@ class Diffusion(object):
                 model.train()
                 step += 1
 
-                x_bw = x['BW'].to(self.device)
-                x_md = x['MD'].to(self.device)
-                x_fw = x['FW'].to(self.device)
+                x_bw = x['BW'].to(self.device, non_blocking=True)
+                x_md = x['MD'].to(self.device, non_blocking=True)
+                x_fw = x['FW'].to(self.device, non_blocking=True)
 
                 e = torch.randn_like(x_md)
                 b = self.betas
@@ -736,7 +748,11 @@ class Diffusion(object):
             sample_dataset,
             batch_size=config.sampling_fid.batch_size,
             shuffle=False,
-            num_workers=config.data.num_workers)
+            num_workers=config.data.num_workers,
+            pin_memory=True,
+            persistent_workers=True,
+            prefetch_factor=4,
+        )
 
         with torch.no_grad():
             data_num = len(sample_dataset)
@@ -757,9 +773,9 @@ class Diffusion(object):
                     config.data.image_size,
                     device=self.device,
                 )
-                x_bw = img['BW'].to(self.device)
-                x_md = img['MD'].to(self.device)
-                x_fw = img['FW'].to(self.device)
+                x_bw = img['BW'].to(self.device, non_blocking=True)
+                x_md = img['MD'].to(self.device, non_blocking=True)
+                x_fw = img['FW'].to(self.device, non_blocking=True)
                 case_name = img['case_name'][0]
                 
                 time_start = time.time()
@@ -832,7 +848,11 @@ class Diffusion(object):
             sample_dataset,
             batch_size=config.sampling_fid.batch_size,
             shuffle=False,
-            num_workers=config.data.num_workers)
+            num_workers=config.data.num_workers,
+            pin_memory=True,
+            persistent_workers=True,
+            prefetch_factor=4,
+        )
 
         with torch.no_grad():
             data_num = len(sample_dataset)
@@ -853,8 +873,8 @@ class Diffusion(object):
                     config.data.image_size,
                     device=self.device,
                 )
-                x_img = sample['LD'].to(self.device)
-                x_gt = sample['FD'].to(self.device)
+                x_img = sample['LD'].to(self.device, non_blocking=True)
+                x_gt = sample['FD'].to(self.device, non_blocking=True)
                 case_name = sample['case_name']
                 
                 time_start = time.time()
