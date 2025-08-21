@@ -89,6 +89,7 @@ def parse_args_and_config():
         help="eta used to control the variances of sigma",
     )
     parser.add_argument("--sequence", action="store_true")
+    parser.add_argument("--amp", action="store_true", help="Enable mixed precision training")
 
     args = parser.parse_args()
     args.log_path = os.path.join(args.exp, "logs", args.doc)
