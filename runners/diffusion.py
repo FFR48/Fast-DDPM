@@ -145,7 +145,8 @@ class Diffusion(object):
         model = torch.nn.DataParallel(model)
 
         optimizer = get_optimizer(self.config, model.parameters())
-        scaler = GradScaler() if self.args.amp else None
+        scaler = GradScaler(enabled=self.args.amp_dtype == 'fp16')
+        amp_dtype = torch.bfloat16 if self.args.amp_dtype == 'bf16' else torch.float16
 
         if self.config.model.ema:
             ema_helper = EMAHelper(mu=self.config.model.ema_rate)
@@ -201,10 +202,7 @@ class Diffusion(object):
                 idx = torch.cat([idx_1, idx_2], dim=0)[:n]
                 t = t_intervals[idx].to(self.device)
 
-                if self.args.amp:
-                    with autocast():
-                        loss = loss_registry[config.model.type](model, x_img, x_gt, t, e, b)
-                else:
+                with autocast(dtype=amp_dtype):
                     loss = loss_registry[config.model.type](model, x_img, x_gt, t, e, b)
 
                 tb_logger.add_scalar("loss", loss, global_step=step)
@@ -214,7 +212,7 @@ class Diffusion(object):
                 )
 
                 optimizer.zero_grad()
-                if self.args.amp:
+                if self.args.amp_dtype == 'fp16':
                     scaler.scale(loss).backward()
                     try:
                         scaler.unscale_(optimizer)
@@ -275,7 +273,8 @@ class Diffusion(object):
         model = torch.nn.DataParallel(model)
 
         optimizer = get_optimizer(self.config, model.parameters())
-        scaler = GradScaler() if self.args.amp else None
+        scaler = GradScaler(enabled=self.args.amp_dtype == 'fp16')
+        amp_dtype = torch.bfloat16 if self.args.amp_dtype == 'bf16' else torch.float16
 
         if self.config.model.ema:
             ema_helper = EMAHelper(mu=self.config.model.ema_rate)
@@ -332,10 +331,7 @@ class Diffusion(object):
                 idx = torch.cat([idx_1, idx_2], dim=0)[:n]
                 t = t_intervals[idx].to(self.device)
 
-                if self.args.amp:
-                    with autocast():
-                        loss = loss_registry[config.model.type](model, x_bw, x_md, x_fw, t, e, b)
-                else:
+                with autocast(dtype=amp_dtype):
                     loss = loss_registry[config.model.type](model, x_bw, x_md, x_fw, t, e, b)
 
                 tb_logger.add_scalar("loss", loss, global_step=step)
@@ -345,7 +341,7 @@ class Diffusion(object):
                 )
 
                 optimizer.zero_grad()
-                if self.args.amp:
+                if self.args.amp_dtype == 'fp16':
                     scaler.scale(loss).backward()
                     try:
                         scaler.unscale_(optimizer)
@@ -413,7 +409,8 @@ class Diffusion(object):
         model = torch.nn.DataParallel(model)
 
         optimizer = get_optimizer(self.config, model.parameters())
-        scaler = GradScaler() if self.args.amp else None
+        scaler = GradScaler(enabled=self.args.amp_dtype == 'fp16')
+        amp_dtype = torch.bfloat16 if self.args.amp_dtype == 'bf16' else torch.float16
 
         if self.config.model.ema:
             ema_helper = EMAHelper(mu=self.config.model.ema_rate)
@@ -450,10 +447,7 @@ class Diffusion(object):
                 ).to(self.device)
                 t = torch.cat([t, self.num_timesteps - t - 1], dim=0)[:n]
 
-                if self.args.amp:
-                    with autocast():
-                        loss = loss_registry[config.model.type](model, x_img, x_gt, t, e, b)
-                else:
+                with autocast(dtype=amp_dtype):
                     loss = loss_registry[config.model.type](model, x_img, x_gt, t, e, b)
 
                 tb_logger.add_scalar("loss", loss, global_step=step)
@@ -463,7 +457,7 @@ class Diffusion(object):
                 )
 
                 optimizer.zero_grad()
-                if self.args.amp:
+                if self.args.amp_dtype == 'fp16':
                     scaler.scale(loss).backward()
                     try:
                         scaler.unscale_(optimizer)
@@ -525,7 +519,8 @@ class Diffusion(object):
         model = torch.nn.DataParallel(model)
 
         optimizer = get_optimizer(self.config, model.parameters())
-        scaler = GradScaler() if self.args.amp else None
+        scaler = GradScaler(enabled=self.args.amp_dtype == 'fp16')
+        amp_dtype = torch.bfloat16 if self.args.amp_dtype == 'bf16' else torch.float16
 
         if self.config.model.ema:
             ema_helper = EMAHelper(mu=self.config.model.ema_rate)
@@ -565,10 +560,7 @@ class Diffusion(object):
                     low=0, high=self.num_timesteps, size=(n // 2 + 1,)
                 ).to(self.device)
                 t = torch.cat([t, self.num_timesteps - t - 1], dim=0)[:n]
-                if self.args.amp:
-                    with autocast():
-                        loss = loss_registry[config.model.type](model, x_bw, x_md, x_fw, t, e, b)
-                else:
+                with autocast(dtype=amp_dtype):
                     loss = loss_registry[config.model.type](model, x_bw, x_md, x_fw, t, e, b)
 
                 tb_logger.add_scalar("loss", loss, global_step=step)
@@ -578,7 +570,7 @@ class Diffusion(object):
                 )
 
                 optimizer.zero_grad()
-                if self.args.amp:
+                if self.args.amp_dtype == 'fp16':
                     scaler.scale(loss).backward()
                     try:
                         scaler.unscale_(optimizer)
