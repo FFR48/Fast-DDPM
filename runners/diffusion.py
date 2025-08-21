@@ -9,6 +9,7 @@ import math
 import tqdm
 import torch
 import torch.utils.data as data
+from torch.cuda.amp import autocast, GradScaler
 
 from models.diffusion import Model
 from models.ema import EMAHelper
@@ -144,6 +145,7 @@ class Diffusion(object):
         model = torch.nn.DataParallel(model)
 
         optimizer = get_optimizer(self.config, model.parameters())
+        scaler = GradScaler() if self.args.amp else None
 
         if self.config.model.ema:
             ema_helper = EMAHelper(mu=self.config.model.ema_rate)
@@ -199,7 +201,11 @@ class Diffusion(object):
                 idx = torch.cat([idx_1, idx_2], dim=0)[:n]
                 t = t_intervals[idx].to(self.device)
 
-                loss = loss_registry[config.model.type](model, x_img, x_gt, t, e, b)
+                if self.args.amp:
+                    with autocast():
+                        loss = loss_registry[config.model.type](model, x_img, x_gt, t, e, b)
+                else:
+                    loss = loss_registry[config.model.type](model, x_img, x_gt, t, e, b)
 
                 tb_logger.add_scalar("loss", loss, global_step=step)
 
@@ -208,15 +214,26 @@ class Diffusion(object):
                 )
 
                 optimizer.zero_grad()
-                loss.backward()
-
-                try:
-                    torch.nn.utils.clip_grad_norm_(
-                        model.parameters(), config.optim.grad_clip
-                    )
-                except Exception:
-                    pass
-                optimizer.step()
+                if self.args.amp:
+                    scaler.scale(loss).backward()
+                    try:
+                        scaler.unscale_(optimizer)
+                        torch.nn.utils.clip_grad_norm_(
+                            model.parameters(), config.optim.grad_clip
+                        )
+                    except Exception:
+                        pass
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    loss.backward()
+                    try:
+                        torch.nn.utils.clip_grad_norm_(
+                            model.parameters(), config.optim.grad_clip
+                        )
+                    except Exception:
+                        pass
+                    optimizer.step()
 
                 if self.config.model.ema:
                     ema_helper.update(model)
@@ -258,6 +275,7 @@ class Diffusion(object):
         model = torch.nn.DataParallel(model)
 
         optimizer = get_optimizer(self.config, model.parameters())
+        scaler = GradScaler() if self.args.amp else None
 
         if self.config.model.ema:
             ema_helper = EMAHelper(mu=self.config.model.ema_rate)
@@ -314,7 +332,11 @@ class Diffusion(object):
                 idx = torch.cat([idx_1, idx_2], dim=0)[:n]
                 t = t_intervals[idx].to(self.device)
 
-                loss = loss_registry[config.model.type](model, x_bw, x_md, x_fw, t, e, b)
+                if self.args.amp:
+                    with autocast():
+                        loss = loss_registry[config.model.type](model, x_bw, x_md, x_fw, t, e, b)
+                else:
+                    loss = loss_registry[config.model.type](model, x_bw, x_md, x_fw, t, e, b)
 
                 tb_logger.add_scalar("loss", loss, global_step=step)
 
@@ -323,15 +345,26 @@ class Diffusion(object):
                 )
 
                 optimizer.zero_grad()
-                loss.backward()
-
-                try:
-                    torch.nn.utils.clip_grad_norm_(
-                        model.parameters(), config.optim.grad_clip
-                    )
-                except Exception:
-                    pass
-                optimizer.step()
+                if self.args.amp:
+                    scaler.scale(loss).backward()
+                    try:
+                        scaler.unscale_(optimizer)
+                        torch.nn.utils.clip_grad_norm_(
+                            model.parameters(), config.optim.grad_clip
+                        )
+                    except Exception:
+                        pass
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    loss.backward()
+                    try:
+                        torch.nn.utils.clip_grad_norm_(
+                            model.parameters(), config.optim.grad_clip
+                        )
+                    except Exception:
+                        pass
+                    optimizer.step()
 
                 if self.config.model.ema:
                     ema_helper.update(model)
@@ -380,6 +413,7 @@ class Diffusion(object):
         model = torch.nn.DataParallel(model)
 
         optimizer = get_optimizer(self.config, model.parameters())
+        scaler = GradScaler() if self.args.amp else None
 
         if self.config.model.ema:
             ema_helper = EMAHelper(mu=self.config.model.ema_rate)
@@ -416,7 +450,11 @@ class Diffusion(object):
                 ).to(self.device)
                 t = torch.cat([t, self.num_timesteps - t - 1], dim=0)[:n]
 
-                loss = loss_registry[config.model.type](model, x_img, x_gt, t, e, b)
+                if self.args.amp:
+                    with autocast():
+                        loss = loss_registry[config.model.type](model, x_img, x_gt, t, e, b)
+                else:
+                    loss = loss_registry[config.model.type](model, x_img, x_gt, t, e, b)
 
                 tb_logger.add_scalar("loss", loss, global_step=step)
 
@@ -425,15 +463,26 @@ class Diffusion(object):
                 )
 
                 optimizer.zero_grad()
-                loss.backward()
-
-                try:
-                    torch.nn.utils.clip_grad_norm_(
-                        model.parameters(), config.optim.grad_clip
-                    )
-                except Exception:
-                    pass
-                optimizer.step()
+                if self.args.amp:
+                    scaler.scale(loss).backward()
+                    try:
+                        scaler.unscale_(optimizer)
+                        torch.nn.utils.clip_grad_norm_(
+                            model.parameters(), config.optim.grad_clip
+                        )
+                    except Exception:
+                        pass
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    loss.backward()
+                    try:
+                        torch.nn.utils.clip_grad_norm_(
+                            model.parameters(), config.optim.grad_clip
+                        )
+                    except Exception:
+                        pass
+                    optimizer.step()
 
                 if self.config.model.ema:
                     ema_helper.update(model)
@@ -476,6 +525,7 @@ class Diffusion(object):
         model = torch.nn.DataParallel(model)
 
         optimizer = get_optimizer(self.config, model.parameters())
+        scaler = GradScaler() if self.args.amp else None
 
         if self.config.model.ema:
             ema_helper = EMAHelper(mu=self.config.model.ema_rate)
@@ -515,7 +565,11 @@ class Diffusion(object):
                     low=0, high=self.num_timesteps, size=(n // 2 + 1,)
                 ).to(self.device)
                 t = torch.cat([t, self.num_timesteps - t - 1], dim=0)[:n]
-                loss = loss_registry[config.model.type](model, x_bw, x_md, x_fw, t, e, b)
+                if self.args.amp:
+                    with autocast():
+                        loss = loss_registry[config.model.type](model, x_bw, x_md, x_fw, t, e, b)
+                else:
+                    loss = loss_registry[config.model.type](model, x_bw, x_md, x_fw, t, e, b)
 
                 tb_logger.add_scalar("loss", loss, global_step=step)
 
@@ -524,15 +578,26 @@ class Diffusion(object):
                 )
 
                 optimizer.zero_grad()
-                loss.backward()
-
-                try:
-                    torch.nn.utils.clip_grad_norm_(
-                        model.parameters(), config.optim.grad_clip
-                    )
-                except Exception:
-                    pass
-                optimizer.step()
+                if self.args.amp:
+                    scaler.scale(loss).backward()
+                    try:
+                        scaler.unscale_(optimizer)
+                        torch.nn.utils.clip_grad_norm_(
+                            model.parameters(), config.optim.grad_clip
+                        )
+                    except Exception:
+                        pass
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    loss.backward()
+                    try:
+                        torch.nn.utils.clip_grad_norm_(
+                            model.parameters(), config.optim.grad_clip
+                        )
+                    except Exception:
+                        pass
+                    optimizer.step()
 
                 if self.config.model.ema:
                     ema_helper.update(model)
