@@ -83,7 +83,13 @@ def parse_args_and_config():
         help="eta used to control the variances of sigma",
     )
     parser.add_argument("--sequence", action="store_true")
-    parser.add_argument("--amp", action="store_true", help="Enable mixed precision training")
+    parser.add_argument(
+        "--amp-dtype",
+        type=str,
+        choices=["bf16", "fp16"],
+        default="bf16",
+        help="Mixed precision dtype: bf16 or fp16",
+    )
 
     args = parser.parse_args()
     args.log_path = os.path.join(args.exp, "logs", args.doc)
